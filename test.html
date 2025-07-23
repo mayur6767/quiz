@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for dark theme and button hover effects */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text color */
+        }
+        .option-button {
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .option-button:hover {
+            background-color: #4a5568; /* Slightly lighter on hover */
+            transform: translateY(-2px);
+        }
+        .option-button.selected {
+            background-color: #4299e1; /* Blue for selected */
+            color: #ffffff;
+            border-color: #4299e1;
+        }
+        .option-button.selected:hover {
+            background-color: #3182ce; /* Darker blue on hover when selected */
+        }
+        .submit-button, .play-again-button {
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .submit-button:hover, .play-again-button:hover {
+            background-color: #2c5282; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+        /* Modal specific styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #2d3748; /* Darker grey for modal */
+            color: #e2e8f0;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Dashboard Header - Simplified -->
+    <header class="w-full max-w-2xl mb-8 p-4 bg-gray-800 rounded-lg shadow-lg">
+        <h1 class="text-3xl font-bold text-center text-blue-400">Quiz Game</h1>
+    </header>
+
+    <!-- Quiz Container -->
+    <main id="quiz-container" class="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
+        <!-- Question Section -->
+        <div class="mb-6">
+            <p class="text-xl font-semibold text-gray-200 mb-4">Question:</p>
+            <p class="text-2xl font-bold text-blue-300 text-center" id="question-text">How many continents are there in the world?</p>
+        </div>
+
+        <!-- Options Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button class="option-button p-4 border-2 border-gray-600 rounded-lg text-xl font-medium text-center bg-gray-700" data-value="5">[ 5 ]</button>
+            <button class="option-button p-4 border-2 border-gray-600 rounded-lg text-xl font-medium text-center bg-gray-700" data-value="6">[ 6 ]</button>
+            <button class="option-button p-4 border-2 border-gray-600 rounded-lg text-xl font-medium text-center bg-gray-700" data-value="7">[ 7 ]</button>
+            <button class="option-button p-4 border-2 border-gray-600 rounded-lg text-xl font-medium text-center bg-gray-700" data-value="8">[ 8 ]</button>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+            <button id="submit-button" class="submit-button px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Submit Answer</button>
+        </div>
+    </main>
+
+    <!-- Brilliant Message Modal (Hidden by default) -->
+    <div id="brilliant-modal" class="modal-overlay fixed inset-0 flex items-center justify-center hidden">
+        <div class="modal-content p-8 rounded-lg shadow-xl text-center max-w-sm w-full">
+            <p class="text-4xl font-extrabold text-green-400 mb-4">You are brilliant!</p>
+            <p class="text-lg text-gray-300">Congratulations on getting the correct answer!</p>
+            <button id="play-again-button" class="mt-6 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const optionButtons = document.querySelectorAll('.option-button');
+        const submitButton = document.getElementById('submit-button');
+        const brilliantModal = document.getElementById('brilliant-modal');
+        const playAgainButton = document.getElementById('play-again-button'); // New button
+        const quizContainer = document.getElementById('quiz-container');
+
+        // Define the correct answer
+        const correctAnswer = '7';
+        let selectedAnswer = null; // Variable to store the user's selected answer
+
+        /**
+         * Resets the quiz to its initial state.
+         * Hides the modal, shows the quiz container, clears selected answer,
+         * and removes highlighting from options.
+         */
+        function resetQuiz() {
+            brilliantModal.classList.add('hidden'); // Hide the modal
+            quizContainer.classList.remove('hidden'); // Show the quiz container
+            selectedAnswer = null; // Clear selected answer
+            // Remove 'selected' class from all buttons
+            optionButtons.forEach(btn => btn.classList.remove('selected'));
+        }
+
+        /**
+         * Adds click event listeners to all option buttons.
+         * When an option is clicked, it highlights the selected option
+         * and deselects any previously selected option.
+         */
+        optionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove 'selected' class from all buttons
+                optionButtons.forEach(btn => btn.classList.remove('selected'));
+
+                // Add 'selected' class to the clicked button
+                button.classList.add('selected');
+
+                // Store the value of the selected answer
+                selectedAnswer = button.dataset.value;
+            });
+        });
+
+        /**
+         * Adds a click event listener to the submit button.
+         * Checks if an answer is selected and if it's correct.
+         * Displays the "You are brilliant!" modal if correct.
+         */
+        submitButton.addEventListener('click', () => {
+            if (selectedAnswer === null) {
+                // Simple feedback if no answer is selected (could be a more elaborate message box)
+                alert('Please select an answer before submitting!');
+                return;
+            }
+
+            if (selectedAnswer === correctAnswer) {
+                // Hide the quiz container
+                quizContainer.classList.add('hidden');
+                // Display the brilliant modal
+                brilliantModal.classList.remove('hidden');
+            } else {
+                // Provide feedback for incorrect answer (can be customized)
+                alert('Incorrect answer. Please try again!');
+                // Optionally, reset selection or provide more hints
+                optionButtons.forEach(btn => btn.classList.remove('selected'));
+                selectedAnswer = null;
+            }
+        });
+
+        /**
+         * Adds a click event listener to the play again button.
+         * Calls the resetQuiz function to return to the main quiz page.
+         */
+        playAgainButton.addEventListener('click', resetQuiz);
+
+        // Custom alert function to avoid using window.alert()
+        function alert(message) {
+            const customAlert = document.createElement('div');
+            customAlert.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50';
+            customAlert.innerHTML = `
+                <div class="bg-gray-700 p-6 rounded-lg shadow-lg text-center max-w-xs w-full">
+                    <p class="text-white text-lg mb-4">${message}</p>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" onclick="this.parentElement.parentElement.remove()">OK</button>
+                </div>
+            `;
+            document.body.appendChild(customAlert);
+        }
+    </script>
+</body>
+</html>
